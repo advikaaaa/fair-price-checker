@@ -140,7 +140,7 @@ only 46% of real listings as fair and 13% as suspicious, which is far too jumpy 
 Requires Python 3.10+ (tested on 3.13).
 
 ```bash
-git clone <repo-url> && cd fair-price-checker
+git clone https://github.com/advikaaaa/fair-price-checker.git && cd fair-price-checker
 python -m venv .venv
 # Windows: .venv\Scripts\activate     macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt

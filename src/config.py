@@ -40,3 +40,26 @@ SUSPICIOUS_PCT = (2.5, 97.5)
 THRESHOLD_ROUNDING = 0.05
 # The fair-price range shown to users is predicted x [fair low, fair high] threshold,
 # so "Fairly Priced" means exactly "asking price is inside the shown range".
+
+# Demo listings for the app's example buttons. scripts/check_predictions.py confirms each
+# produces the expected verdict; re-run it after retraining.
+EXAMPLES = {
+    "Try a fair listing": {
+        "expected": "Fairly Priced",
+        "listing": {"location": "Whitefield", "area_type": "Super built-up", "area_sqft": 1200,
+                    "bhk": 2, "bathrooms": 2, "balconies": 1, "ready_to_move": 1},
+        "asking_lakhs": 68,
+    },
+    "Try an overpriced listing": {
+        "expected": "Overpriced",
+        "listing": {"location": "Electronic City", "area_type": "Super built-up", "area_sqft": 1150,
+                    "bhk": 2, "bathrooms": 2, "balconies": 1, "ready_to_move": 1},
+        "asking_lakhs": 75,
+    },
+    "Try a suspicious listing": {
+        "expected": "Suspicious",
+        "listing": {"location": "Koramangala", "area_type": "Super built-up", "area_sqft": 1800,
+                    "bhk": 3, "bathrooms": 3, "balconies": 2, "ready_to_move": 1},
+        "asking_lakhs": 55,
+    },
+}

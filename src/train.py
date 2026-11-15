@@ -73,6 +73,13 @@ def cross_validate(dev: pd.DataFrame) -> dict:
     return {name: pd.DataFrame(s).mean().to_dict() for name, s in scores.items()}
 
 
+def rounded(obj, digits: int = 4):
+    """Round floats before saving so re-training doesn't create noisy diffs in metrics.json."""
+    if isinstance(obj, dict):
+        return {k: rounded(v, digits) for k, v in obj.items()}
+    return round(obj, digits) if isinstance(obj, float) else obj
+
+
 def evaluate(y_true, y_pred) -> dict:
     return {
         "MAE_lakhs": mean_absolute_error(y_true, y_pred),
@@ -157,13 +164,13 @@ def main():
         "test_metrics": results[MAIN_MODEL]["test"],
         "n_train": len(train),
     }, MODEL_PATH, compress=3)
-    METRICS_PATH.write_text(json.dumps({
+    METRICS_PATH.write_text(json.dumps(rounded({
         "main_model": MAIN_MODEL,
         "metrics": results,
         "validation_ratio_percentiles": ratio_pcts,
         "verdict_thresholds": thresholds,
         "verdict_shares": shares,
-    }, indent=2))
+    }), indent=2))
     size_mb = MODEL_PATH.stat().st_size / 1e6
     print(f"\nSaved {MODEL_PATH.name} ({size_mb:.1f} MB) and {METRICS_PATH.name}")
 

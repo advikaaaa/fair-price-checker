@@ -24,7 +24,8 @@ FRIENDLY = {"area_sqft": "Area (sq ft)", "bhk": "BHK", "bathrooms": "Bathrooms",
 def fmt_price(lakhs: float) -> str:
     """₹ lakhs below 1 crore, ₹ crores above (100 lakhs = 1 crore)."""
     if lakhs >= 100:
-        return f"₹{lakhs / 100:.2f} Cr"
+        crores = lakhs / 100
+        return f"₹{crores:.2f} Cr" if crores < 10 else f"₹{crores:.1f} Cr" if crores < 100 else f"₹{crores:,.0f} Cr"
     return f"₹{lakhs:.1f}L" if lakhs < 10 else f"₹{lakhs:.0f}L"
 
 
@@ -146,6 +147,7 @@ class Result:
     reason: str
     factors: list[dict]
     typical_lakhs: float                 # SHAP base value: the model's "typical listing" price
+    location: str                        # matched locality name, or "other" if not known
     notes: list[str] = field(default_factory=list)
 
 
@@ -158,6 +160,10 @@ def predict(listing: dict, asking_lakhs: float) -> Result:
     bundle = load_bundle()
 
     row = dict(listing)
+    # Forgive differences in case and spacing, e.g. "whitefield " -> "Whitefield".
+    by_lower = {l.lower(): l for l in bundle["localities"]}
+    row["location"] = by_lower.get(" ".join(str(row["location"]).split()).lower(), row["location"])
+    display_location = row["location"]
     if row["location"] not in bundle["localities"]:
         notes.append(f"'{row['location']}' has too few listings in our data, so it is treated as a "
                      "generic Bengaluru locality. The estimate is less specific.")
@@ -178,10 +184,31 @@ def predict(listing: dict, asking_lakhs: float) -> Result:
         ratio=ratio,
         verdict=verdict,
         reason=verdict_reason(verdict, ratio),
-        factors=explain(X, estimate, bundle, typed_location=listing["location"]),
+        factors=explain(X, estimate, bundle, typed_location=display_location),
         typical_lakhs=float(np.exp(bundle["explainer"].expected_value[0])),
+        location=row["location"],
         notes=notes,
     )
+
+
+def similar_listings(df: pd.DataFrame, listing: dict, min_count: int = 10) -> tuple[pd.DataFrame, str]:
+    """Real listings comparable to this one, for the market-context chart.
+    Tries the narrowest sensible group first and widens until there are enough listings."""
+    same_bhk = df["bhk"] == listing["bhk"]
+    same_loc = df["location"] == listing["location"]
+    area = listing["area_sqft"]
+    near_area = df["area_sqft"].between(area * 0.75, area * 1.25)
+    options = [
+        (same_loc & same_bhk & near_area, f"{listing['bhk']} BHK in {listing['location']}, {area * 0.75:,.0f}-{area * 1.25:,.0f} sq ft"),
+        (same_loc & same_bhk, f"{listing['bhk']} BHK in {listing['location']}"),
+        (same_loc, f"all listings in {listing['location']}"),
+        (same_bhk & df["area_sqft"].between(area * 0.85, area * 1.15),
+         f"{listing['bhk']} BHK across Bengaluru, {area * 0.85:,.0f}-{area * 1.15:,.0f} sq ft"),
+    ]
+    for mask, description in options:
+        if mask.sum() >= min_count:
+            return df[mask], description
+    return df[same_bhk], f"{listing['bhk']} BHK across Bengaluru"
 
 
 if __name__ == "__main__":

@@ -3,3 +3,4 @@ ipykernel
 nbconvert
 nbformat
 kaleido
+playwright

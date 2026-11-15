@@ -13,3 +13,13 @@ pip install -r requirements.txt
 python src/train.py
 streamlit run app/streamlit_app.py
 ```
+
+## Dataset
+
+[Bengaluru House Price Data](https://www.kaggle.com/datasets/amitabhajoy/bengaluru-house-price-data) (Kaggle),
+about 13,300 listings across Bengaluru. Place `Bengaluru_House_Data.csv` in `data/raw/` (not committed).
+
+## Team
+
+- Advika Awasthi
+- Utkarsh Mallik
